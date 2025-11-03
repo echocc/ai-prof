@@ -1,3 +1,39 @@
+"""
+PDF and EPUB Book Ingestion Script
+
+This script extracts text content from PDF and EPUB book files and stores them
+in the PostgreSQL database for later chunking, embedding, and semantic search.
+
+Input:
+    - PDF files from: data/raw/pdfs/*.pdf
+    - EPUB files from: data/raw/epubs/*.epub
+
+Output:
+    - Database records in zen_docs table (source_type='pdf' or 'epub')
+    - Plain text files in: data/processed/books/{doc_id}.txt
+
+Process:
+    1. For each PDF: Extract text from all pages using PyPDF
+    2. For each EPUB: Extract HTML content and convert to plain text using BeautifulSoup
+    3. Skip files with less than 500 characters (likely empty or corrupted)
+    4. Calculate SHA1 hash of content for deduplication
+    5. Insert new documents into database with author='Adyashanti'
+    6. Save extracted text to processed directory
+
+Deduplication:
+    - Uses SHA1 content hash to detect duplicate documents
+    - If content already exists, returns existing document ID
+    - Prevents duplicate processing of the same content
+
+Usage:
+    python scripts/30_ingest_pdfs_epubs.py
+
+Requirements:
+    - PostgreSQL database with zen_docs table
+    - DATABASE_URL in .env file
+    - PDF/EPUB files in respective raw data directories
+"""
+
 import os, uuid, hashlib
 from pathlib import Path
 from pypdf import PdfReader

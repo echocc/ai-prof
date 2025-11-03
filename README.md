@@ -33,7 +33,7 @@ python scripts/30_ingest_pdfs_epubs.py
 python scripts/40_chunk_embed_load.py
 
 # Sanity search
-python scripts/50_maintenance.py
+python scripts/maintenance.py
 ```
 
 Or use the CLI:

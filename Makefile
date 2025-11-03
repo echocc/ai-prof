@@ -17,7 +17,7 @@ down:
 	docker compose down
 
 psql:
-	docker compose exec db psql -U postgres -d ai_zen
+	docker compose exec db psql -U postgres -d ai_prof
 
 db:
 	. .venv/bin/activate && psql "$$(grep -v '^#' $(ENV) | xargs)" -f scripts/00_init_db.sql
@@ -35,6 +35,6 @@ embed:
 	. .venv/bin/activate && $(PY) scripts/40_chunk_embed_load.py
 
 search:
-	. .venv/bin/activate && $(PY) scripts/50_maintenance.py
+	. .venv/bin/activate && $(PY) scripts/maintenance.py
 
 all: scrape transcribe ingest_books embed search

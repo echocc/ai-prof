@@ -1,0 +1,46 @@
+databases:
+  - name: adyai-postgres
+    databaseName: ai_prof
+    user: postgres
+    plan: free
+    postgresMajorVersion: 14
+
+services:
+  # Backend API (FastAPI)
+  - type: web
+    name: adyai-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn adyai.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: adyai-postgres
+          property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: EMBED_MODEL
+        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.12"
+
+  # Frontend (Next.js)
+  - type: web
+    name: adyai-frontend
+    runtime: node
+    plan: free
+    buildCommand: cd adyai/frontend && npm install && npm run build
+    startCommand: cd adyai/frontend && npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "18"
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: adyai-backend
+          envVarKey: RENDER_EXTERNAL_URL

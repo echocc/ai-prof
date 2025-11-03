@@ -25,8 +25,8 @@ def main():
         "transcribe": ["python","scripts/20_transcribe_audio.py"],
         "ingest_books": ["python","scripts/30_ingest_pdfs_epubs.py"],
         "embed": ["python","scripts/40_chunk_embed_load.py"],
-        "search": ["python","scripts/50_maintenance.py"],
-        "db": ["psql", env.get("DATABASE_URL","postgresql://postgres:postgres@localhost:5432/ai_zen"), "-f", "scripts/00_init_db.sql"],
+        "search": ["python","scripts/maintenance.py"],
+        "db": ["psql", env.get("DATABASE_URL","postgresql://postgres:postgres@localhost:5432/ai_prof"), "-f", "scripts/00_init_db.sql"],
         "up": ["docker","compose","up","-d"],
         "down": ["docker","compose","down"],
     }
