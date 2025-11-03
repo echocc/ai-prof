@@ -10,7 +10,7 @@ services:
     name: adyai-backend
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements-production.txt
     startCommand: uvicorn adyai.app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:

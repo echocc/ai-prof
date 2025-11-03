@@ -1,3 +1,6 @@
+# Full development dependencies for local data processing
+# For production deployment, use requirements-production.txt instead
+
 psycopg[binary]==3.2.3
 python-dotenv==1.0.1
 tqdm==4.66.4

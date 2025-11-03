@@ -1,0 +1,22 @@
+# Production dependencies for deployed backend
+# Only includes packages needed to run the API server
+
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+
+# Database
+psycopg[binary]==3.2.3
+
+# AI/ML
+anthropic==0.39.0
+sentence-transformers==3.0.1
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.6.4
+
+# sentence-transformers dependencies
+torch>=2.0.0
+transformers>=4.0.0
+numpy>=1.22.0
