@@ -1,7 +1,6 @@
 databases:
   - name: adyai-postgres
     databaseName: ai_prof
-    user: postgres
     plan: free
     postgresMajorVersion: 14
 
