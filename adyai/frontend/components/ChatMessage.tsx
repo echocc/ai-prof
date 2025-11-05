@@ -23,10 +23,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     return (
       <div className="flex justify-end">
         <div className="flex items-start gap-4 max-w-[80%] flex-row-reverse">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-2xl flex-shrink-0">
-            👤
-          </div>
-          <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-2xl rounded-tr-sm px-6 py-4 shadow-md">
+          <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl rounded-tr-sm px-6 py-4 shadow-md">
             <p className="whitespace-pre-wrap">{message.text}</p>
           </div>
         </div>
@@ -37,10 +34,10 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className="flex justify-start">
       <div className="flex items-start gap-4 max-w-[80%]">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-red-500 flex items-center justify-center text-2xl flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 flex items-center justify-center text-2xl flex-shrink-0">
           🧘
         </div>
-        <div className="bg-white rounded-2xl rounded-tl-sm px-6 py-4 shadow-md">
+        <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-6 py-4 shadow-md">
           <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
             {message.text}
           </p>
