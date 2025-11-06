@@ -39,18 +39,59 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import anthropic
+from sentence_transformers import SentenceTransformer
+import psycopg
+from psycopg.rows import dict_row
 
 # Add parent directory to path to import from scripts
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from scripts.maintenance import search as vector_search
 
 load_dotenv()
 
+# Preload the embedding model at startup (once, not per request)
+print("="*60)
+print("Loading embedding model (this may take 30-60 seconds)...")
+print("="*60)
+EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+embedding_model = SentenceTransformer(EMBED_MODEL_NAME)
+print("✓ Embedding model loaded successfully")
+print("="*60)
+
 # Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 if not ANTHROPIC_API_KEY:
     print("WARNING: ANTHROPIC_API_KEY not found in .env file")
     print("Please add: ANTHROPIC_API_KEY=your_key_here")
+
+if not DATABASE_URL:
+    print("WARNING: DATABASE_URL not found in .env file")
+
+# Custom search function using preloaded model
+def vector_search(query: str, k: int = 5):
+    """
+    Semantic search using the preloaded embedding model.
+    This is much faster than loading the model on every request.
+    """
+    try:
+        # Generate embedding for query using preloaded model
+        query_vector = embedding_model.encode([query], normalize_embeddings=True)[0].tolist()
+
+        # Query database
+        with psycopg.connect(DATABASE_URL) as conn, conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""
+                SELECT c.content, d.title, d.source_type, d.source_url,
+                       1 - (c.embedding <=> %s::vector) AS score
+                FROM zen_chunks c
+                JOIN zen_docs d ON d.id=c.doc_id
+                ORDER BY c.embedding <-> %s::vector
+                LIMIT %s
+            """, (query_vector, query_vector, k))
+            return cur.fetchall()
+    except Exception as e:
+        print(f"Error in vector_search: {e}")
+        raise
 
 # Initialize FastAPI app
 app = FastAPI(
