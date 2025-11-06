@@ -42,24 +42,37 @@ import anthropic
 from sentence_transformers import SentenceTransformer
 import psycopg
 from psycopg.rows import dict_row
+import httpx
 
 # Add parent directory to path to import from scripts
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 load_dotenv()
 
-# Preload the embedding model at startup (once, not per request)
-print("="*60)
-print("Loading embedding model (this may take 30-60 seconds)...")
-print("="*60)
-EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-embedding_model = SentenceTransformer(EMBED_MODEL_NAME)
-print("✓ Embedding model loaded successfully")
-print("="*60)
-
 # Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Embedding configuration
+USE_API_EMBEDDINGS = os.getenv("USE_API_EMBEDDINGS", "false").lower() == "true"
+EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+
+print("="*60)
+print("🔧 Embedding Configuration")
+print("="*60)
+if USE_API_EMBEDDINGS and OPENAI_API_KEY:
+    print("✓ Using OpenAI API embeddings (no memory overhead)")
+    print("  Model: text-embedding-3-small (1536 dims)")
+    print("  ⚠️  WARNING: Database must contain OpenAI embeddings!")
+    print("  If database has local model embeddings, re-embed first.")
+else:
+    if USE_API_EMBEDDINGS and not OPENAI_API_KEY:
+        print("⚠️  USE_API_EMBEDDINGS=true but OPENAI_API_KEY not set")
+        print("  Falling back to local model")
+    print(f"✓ Using local model: {EMBED_MODEL_NAME}")
+    print("  (Model will be lazy-loaded on first request)")
+print("="*60)
 
 if not ANTHROPIC_API_KEY:
     print("WARNING: ANTHROPIC_API_KEY not found in .env file")
@@ -68,15 +81,69 @@ if not ANTHROPIC_API_KEY:
 if not DATABASE_URL:
     print("WARNING: DATABASE_URL not found in .env file")
 
-# Custom search function using preloaded model
+# Global variable to cache the embedding model after first load
+_embedding_model = None
+
+def get_embedding_model():
+    """
+    Lazy-load the embedding model on first use to avoid OOM at startup.
+    This caches the model in memory after first load for fast subsequent requests.
+
+    On Render free tier (512MB RAM), loading at startup causes OOM.
+    Loading on first request allows the app to start successfully.
+    """
+    global _embedding_model
+    if _embedding_model is None:
+        print(f"Loading embedding model: {EMBED_MODEL_NAME} (first request will be slow)")
+        _embedding_model = SentenceTransformer(EMBED_MODEL_NAME)
+        print("✓ Embedding model loaded and cached")
+    return _embedding_model
+
+def get_embedding_vector(text: str) -> list:
+    """
+    Generate embedding vector for text using either OpenAI API or local model.
+    Switches based on USE_API_EMBEDDINGS environment variable.
+
+    - If USE_API_EMBEDDINGS=true and OPENAI_API_KEY is set: Use OpenAI API (no memory overhead)
+    - Otherwise: Use local SentenceTransformer model (lazy-loaded, ~300MB memory)
+    """
+    if USE_API_EMBEDDINGS and OPENAI_API_KEY:
+        # Use OpenAI API for embeddings
+        try:
+            with httpx.Client() as client:
+                response = client.post(
+                    "https://api.openai.com/v1/embeddings",
+                    headers={
+                        "Authorization": f"Bearer {OPENAI_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "text-embedding-3-small",
+                        "input": text,
+                    },
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["data"][0]["embedding"]
+        except Exception as e:
+            print(f"⚠️  OpenAI API embedding failed, falling back to local model: {e}")
+            model = get_embedding_model()
+            return model.encode([text], normalize_embeddings=True)[0].tolist()
+    else:
+        # Use local model
+        model = get_embedding_model()
+        return model.encode([text], normalize_embeddings=True)[0].tolist()
+
+# Custom search function using cached model
 def vector_search(query: str, k: int = 5):
     """
-    Semantic search using the preloaded embedding model.
-    This is much faster than loading the model on every request.
+    Semantic search using either API embeddings or local model.
+    Controlled by USE_API_EMBEDDINGS environment variable.
     """
     try:
-        # Generate embedding for query using preloaded model
-        query_vector = embedding_model.encode([query], normalize_embeddings=True)[0].tolist()
+        # Generate embedding vector
+        query_vector = get_embedding_vector(query)
 
         # Query database
         with psycopg.connect(DATABASE_URL) as conn, conn.cursor(row_factory=dict_row) as cur:

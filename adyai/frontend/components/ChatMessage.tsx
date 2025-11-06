@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+
 interface Source {
   title: string;
   content: string;
@@ -24,7 +26,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       <div className="flex justify-end">
         <div className="flex items-start gap-4 max-w-[80%] flex-row-reverse">
           <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl rounded-tr-sm px-6 py-4 shadow-md">
-            <p className="whitespace-pre-wrap">{message.text}</p>
+            <div className="prose prose-invert prose-sm max-w-none">
+              <ReactMarkdown>{message.text}</ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>
@@ -38,9 +42,22 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           🧘
         </div>
         <div className="bg-gray-100 rounded-2xl rounded-tl-sm px-6 py-4 shadow-md">
-          <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
-            {message.text}
-          </p>
+          <div className="prose prose-sm max-w-none text-gray-800">
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                ul: ({ children }) => <ul className="mb-2 ml-4 list-disc">{children}</ul>,
+                ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal">{children}</ol>,
+                li: ({ children }) => <li className="mb-1">{children}</li>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+                code: ({ children }) => <code className="bg-gray-200 px-1 py-0.5 rounded text-sm">{children}</code>,
+                pre: ({ children }) => <pre className="bg-gray-200 p-2 rounded overflow-x-auto mb-2">{children}</pre>,
+              }}
+            >
+              {message.text}
+            </ReactMarkdown>
+          </div>
 
           {message.sources && message.sources.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">

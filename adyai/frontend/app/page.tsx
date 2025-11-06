@@ -74,10 +74,10 @@ export default function Home() {
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error:", (error as Error).message);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Sorry, I encountered an error. Please try again.",
+        text: "Sorry, I encountered an error: " + (error as Error).message,
         isUser: false,
         timestamp: new Date(),
       };
@@ -103,20 +103,29 @@ export default function Home() {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 flex flex-col h-screen py-16">
-        {/* Header */}
-        <header className="text-gray-800 py-20 px-8">
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-5xl font-light text-center tracking-wide">Welcome to Adyai</h1>
-            <p className="text-center text-gray-600 mt-4 text-xl">
-              Ask questions about awakening, meditation, or the nature of consciousness. <br />
-              Let this be a space for sincere inquiry into the truth of who you are.
-            </p>
-          </div>
-        </header>
+      <div className="relative z-10 flex flex-col h-screen">
+        {/* Header - Conditional styling based on messages */}
+        {messages.length === 0 ? (
+          /* Full header when no messages */
+          <header className="text-gray-800 py-20 px-8">
+            <div className="flex flex-col items-center justify-center">
+              <h1 className="text-5xl font-light text-center tracking-wide">Welcome to Adyai 🧘🏻🤖</h1>
+              <p className="text-center text-gray-600 mt-4 text-xl">
+                Let this be a space for sincere inquiry into the truth of who you are.
+              </p>
+            </div>
+          </header>
+        ) : (
+          /* Compact header when messages exist */
+          <header className="text-gray-800 py-4 px-8 border-b border-white/30 backdrop-blur-sm bg-white/20">
+            <div className="max-w-4xl mx-auto flex flex-col items-center justify-center">
+              <h1 className="text-2xl font-light tracking-wide">Adyai 🧘🏻🤖</h1>
+            </div>
+          </header>
+        )}
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto px-4">
+        <div className="flex-1 overflow-y-auto px-4 py-6">
           <div className="max-w-4xl mx-auto space-y-6">
             {messages.length === 0 ? (
               <ExampleQuestions onQuestionClick={sendMessage} />
