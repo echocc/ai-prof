@@ -56,7 +56,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Embedding configuration
 USE_API_EMBEDDINGS = os.getenv("USE_API_EMBEDDINGS", "false").lower() == "true"
-EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "paraphrase-MiniLM-L3-v2")
 
 print("="*60)
 print("🔧 Embedding Configuration")
